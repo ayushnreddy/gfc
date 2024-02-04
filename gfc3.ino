@@ -4,10 +4,10 @@
 #include <SD.h>
 
 // Define the pin configuration for the BMP388
-#define BMP_CS_PIN 14 // Example GPIO pin for BMP388 chip select
+#define BMP_CS_PIN 5 // Example GPIO pin for BMP388 chip select
 
 // Define the pin configuration for the microSD card
-#define SD_CS_PIN 5
+#define SD_CS_PIN 27
 
 // Create an instance of the BMP388 sensor
 Adafruit_BMP3XX bmp;
@@ -20,10 +20,10 @@ void setup() {
   Serial.begin(115200);
 
   // Initialize the SPI bus for BMP388
-  SPI.begin(18, 19, BMP_CS_PIN); // SCK, MISO, MOSI, SS
+  SPI.begin(18, 19, 23, BMP_CS_PIN); // SCK, MISO, MOSI, SS
 
   // Initialize the BMP388 sensor
-  if (!bmp.begin()) {
+ if (! bmp.begin_SPI(BMP_CS_PIN, 18, 19, 23)) {
     Serial.println("Could not find a valid BMP388 sensor, check wiring!");
     while (1);
   }
