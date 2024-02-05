@@ -207,8 +207,10 @@ void setup(){
   testFileIO(SD, "/test.txt");
   Serial.printf("Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));
   Serial.printf("Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));
+  Serial.println("setup");
 }
 
 void loop(){
-
+  Serial.println("loop");
+  delay(2000);
 }
