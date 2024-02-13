@@ -5,7 +5,7 @@ Servo servoP; //Initialize parachut servo class
 void setup() {
   ESP32PWM::allocateTimer(0);
   servoP.setPeriodHertz(50); 
-  servoP.attach(ParachuteServo, 500, 1000); // or 500 2400
+  servoP.attach(ParachuteServo, 500, 2400); // or 500 2400
 
 }
 
