@@ -5,7 +5,7 @@
 #define LED_BUILTIN 2
 
 const char *ssid = "NotARocket";
-const char *password = "xX_JerrySIMP_Xx";
+const char *password = "jerryismydad";
 
 WiFiServer server(80);
 
