@@ -1,3 +1,5 @@
+
+
 #include "FS.h"
 #include "SD.h"
 #include "SPI.h"
@@ -8,6 +10,12 @@
 
 #include <string>
 #include <sstream>
+
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <WiFiAP.h>
+const char *ssid = "NotARocket";
+const char *password = "xX_JerrySIMP_Xx";
 
 #define SD_SCK  14
 #define SD_MISO  12
@@ -194,6 +202,41 @@ void testFileIO(fs::FS &fs, const char * path){
   file.close();
 }
 
+
+
+// 8 boolean global variables for the rocket
+uint8_t stateHolder = 0; // Holds up to 8 states, each bit represents a different state
+
+void setState(int var, bool state) {
+  if (state) {
+    stateHolder |= 1 << var; // Set bit var to 1
+  } else {
+    stateHolder &= ~(1 << var); // Set bit var to 0
+  }
+}
+
+// Function to get the state of the bit (bit 0)
+bool getState(int var) {
+  return (stateHolder & (1 << var)) != 0;
+}
+void toggle(int var){
+  if (getState(var)){
+    setState(var, false);
+  }
+  else{
+    setState(var, true);
+  }
+  }
+
+WiFiServer server(80);
+
+void newRecording(int num){
+  writeFile(SD, "/pres.txt", "Pressure hPa \n");
+  writeFile(SD, "/temp.txt", "Temperature *C \n");
+  writeFile(SD, "/alt.txt", "Altitude m \n");
+  Serial.printf("Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));
+  Serial.printf("Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));
+}
 void setup(){
   Serial.begin(115200);
   Serial.println("setup");
@@ -247,15 +290,28 @@ void setup(){
   // readFile(SD, "/foo.txt");
   // testFileIO(SD, "/test.txt");
 
-  writeFile(SD, "/pres.txt", "Pressure hPa \n");
-  writeFile(SD, "/temp.txt", "Temperature *C \n");
-  writeFile(SD, "/alt.txt", "Altitude m \n");
-  Serial.printf("Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));
-  Serial.printf("Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));
-  
+
+  // WiFi Setup
+  Serial.println("Configuring access point...");
+  if (!WiFi.softAP(ssid, password)) {
+    log_e("Soft AP creation failed.");
+    while (1);
+  }
+  IPAddress myIP = WiFi.softAPIP();
+  Serial.print("AP IP address: ");
+  Serial.println(myIP);
+  server.begin();
+  Serial.println("Server started");
+
+  setState(0, false); // Armed state
+  setState(1, false); // Launch State
+  setState(2, false); // Flight ready state
+  setState(3, false); // Recording State
+  setState(4, false); // Data clear verification state
 }
 
 void loop(){
+  if (getState(3)) {
   appendFile(SD, "/temp.txt", convertChar(bmp.temperature));
   appendFile(SD, "/temp.txt", "\n");
   // dtostrf(bmp.temperature, 7, 0, tempstring);
@@ -264,6 +320,7 @@ void loop(){
   // dtostrf(bmp.temperature, 7, 0, tempstring);
   appendFile(SD, "/alt.txt", convertChar(bmp.readAltitude(seapressure)));
   appendFile(SD, "/alt.txt", "\n");
+  }
   delay(2000);
   Serial.println("logged");
   // dtostrf(bmp.temperature, 7, 0, tempstring);
