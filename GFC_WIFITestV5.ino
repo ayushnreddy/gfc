@@ -17,6 +17,7 @@ std::string fileName;
 #include <WiFiAP.h>
 const char *ssid = "NotARocket";
 const char *password = "xX_JerrySIMP_Xx";
+//192.168.4.1
 
 
 #define SD_SCK  14
