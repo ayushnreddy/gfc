@@ -154,3 +154,11 @@ void calculate_IMU_error() {
   Serial.print("GyroErrorZ: ");
   Serial.println(GyroErrorZ);
 }
+
+const char * convertDoubleToChar(double inputValue) {
+  std::string str = std::to_string(inputValue);
+  char *cstr = new char[str.length() + 1];
+  str.copy(cstr, str.length());
+  cstr[str.length()] = '\0';
+  return cstr;
+}
