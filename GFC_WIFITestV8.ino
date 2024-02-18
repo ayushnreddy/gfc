@@ -38,53 +38,6 @@ Adafruit_BMP3XX bmp;
 
 SPIClass spi = SPIClass(HSPI);
 
-string tempstring = "";
-
-const char * convertDoubleToChar(double inputValue) {
-  std::string str = std::to_string(inputValue);
-  char *cstr = new char[str.length() + 1];
-  str.copy(cstr, str.length());
-  cstr[str.length()] = '\0';
-  return cstr;
-}
-
-void listDir(fs::FS &fs, const char * dirname, uint8_t levels) {
-  Serial.printf("Listing directory: %s\n", dirname);
-
-  File root = fs.open(dirname);
-  if (!root) {
-    Serial.println("Failed to open directory");
-    return;
-  }
-  if (!root.isDirectory()) {
-    Serial.println("Not a directory");
-    return;
-  }
-
-  File file = root.openNextFile();
-  while (file) {
-    if (file.isDirectory()) {
-      Serial.print("  DIR : ");
-      Serial.println(file.name());
-      if (levels) {
-        listDir(fs, file.name(), levels - 1);
-      }
-    } else {
-      Serial.print("  FILE: ");
-      Serial.print(file.name());
-      Serial.print("  SIZE: ");
-      Serial.println(file.size());
-    }
-    file = root.openNextFile();
-  }
-}
-
-
-
-
-
-
-
 void writeFile(fs::FS &fs, const char * path, const char * message) {
   Serial.printf("Writing file: %s\n", path);
 
@@ -293,7 +246,6 @@ if(!getState(1)) {
   }
 } 
   if (getState(3)) {
-    string dataLog = "";
 
     std::string dataUpload = std::to_string(bmp.temperature) + ", " + std::to_string(bmp.pressure) + ", " + std::to_string(bmp.readAltitude(seapressure)) + "\n";
     appendFile(SD, fileName.c_str(), dataUpload.c_str());
