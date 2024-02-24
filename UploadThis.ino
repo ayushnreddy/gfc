@@ -433,7 +433,7 @@ void loop() {
   appendFile(SD, "/test.txt", "\n");
 
   if(bmp.readAltitude(seapressure)+1<topHeight){
-    servo.write(300);
+    servoP.write(300);
   }
   
   delayMicroseconds(measurement_delay_us);
