@@ -215,6 +215,9 @@ void setup() {
   // to calculate IMU error
   // calculate_IMU_error();
   // return;
+  ESP32PWM::allocateTimer(0);
+  servoP.setPeriodHertz(50); 
+  servoP.attach(ParachuteServo, 500, 2400);
 
 }
 
