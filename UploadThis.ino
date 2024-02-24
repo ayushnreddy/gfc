@@ -8,6 +8,11 @@
 #include "SD.h"
 #include "SPI.h"
 
+#include <ESP32Servo.h>
+#define ParachuteServo 1 //ADD NUMBER
+
+Servo servoP;
+
 Adafruit_ICM20948 icm;
 Adafruit_BMP3XX bmp;
 uint16_t measurement_delay_us = 65535; // Delay between measurements for testing
