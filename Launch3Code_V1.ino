@@ -227,249 +227,249 @@ void setup() {
 }
 
 void loop() {
-if(!getState(0)) {
-  WiFiClient client = server.available();
-
-  if (client) {
-    String currentLine = "";
-    while (client.connected()) {
-      if (client.available()) {
-        char c = client.read();
-        if (c == '\n') {
-          if (currentLine.length() == 0) {
-            client.println("HTTP/1.1 200 OK");
-            client.println("Content-type:text/html");
-            client.println();
-
-            if (!getState(3)) {
-            client.print("<a href=\"/START_RECORDING\">START RECORDING</a><br>");
-            }
-            if (getState(3)) {
-              client.print("<a href=\"/END_RECORDING\">END RECORDING</a><br>");
-            }
-            if (getState(2)) {
-              client.print("<a href=\"/DEACTIVATE\">FLIGHT READY </a><br>");
-            }
-            if (!getState(2)) {
-              client.print("<a href=\"/ACTIVATE\">SYSTEMS OFFLINE</a><br>");
-            }
-            if (!getState(1)) {
-              client.print("<a href=\"/P_DEPLOY\">DEPLOY PARACHUTE</a><br>");
-            }
-            if (getState(1)) {
-              client.print("<a href=\"/P_LOCK\">LOCK PARACHUTE</a><br>");
-            }
-
-            break;
-          } else {
-            currentLine = "";
-          }
-        } else if (c != '\r') {
-          currentLine += c;
-        }
-
-
-
-        if (currentLine.endsWith("GET /START_RECORDING")) {
-          Serial.print("START RECORDING");
-          toggle(3);
-          fileNum += 1;
-          fileName = "/Recording" + std::to_string(fileNum) + ".txt";
-          writeFile(SD, fileName.c_str(), "*C, Pres, Alt\n");
-        } else if (currentLine.endsWith("GET /END_RECORDING")) {
-          Serial.print("END RECORDING");
-          toggle(3);
-        } else if (currentLine.endsWith("GET /ACTIVATE")) {
-          toggle(2);
-          setState(1, false);
-          servoP.write(180);
-          startAltitude = bmp.readAltitude(seapressure);
-        } else if (currentLine.endsWith("GET /DEACTIVATE")) {
-          toggle(2);
-        } else if (currentLine.endsWith("GET /P_LOCK")) {
-          toggle(1);
-          servoP.write(180);
-        } else if (currentLine.endsWith("GET /P_DEPLOY")) {
-          toggle(1);
-          servoP.write(0);
-        } 
-        
-        
-
-      }
-    }
-    client.stop();
-  }
-  }
-    // Get a new normalized sensor event
-  sensors_event_t accel;
-  sensors_event_t gyro;
-  sensors_event_t mag;
-  sensors_event_t temp;
-  icm.getEvent(&accel, &gyro, &temp, &mag);
-  calculate_IMU_error();
-  AccX = accel.acceleration.x;
-  AccY = accel.acceleration.y;
-  AccZ = accel.acceleration.z;
-
-    // Sum all readings
-  accAngleX = (atan(AccY / sqrt(pow(AccX, 2) + pow(AccZ, 2))) * 180 / PI) - 0.58;
-  accAngleY = (atan(-1 * AccX / sqrt(pow(AccY, 2) + pow(AccZ, 2))) * 180 / PI) + 1.58;
-
-  // === Read gyroscope data === //
-  previousTime = currentTime; // Previous time is stored before the actual time read
-  currentTime = millis(); // Current time actual time read
-  elapsedTime = (currentTime - previousTime) / 1000; // Divide by 1000 to get seconds
-
-  // correct the gyro.gyro.x, y and z values
-  // take Gyro Error from IMU Error
-  GyroX = (gyro.gyro.x + 0.56); // GyroError x
-  GyroY = (gyro.gyro.y - 2 ); // GyroError y
-  GyroZ = (gyro.gyro.z + 0.79); // GyroError z
-
-  // Currently the raw values are in degrees per seconds, deg/s, so we need to multiply by sendonds (s) to get the angle in degrees
-  gyroAngleX = gyroAngleX + GyroX * elapsedTime; // deg/s * s = deg
-  gyroAngleY = gyroAngleY + GyroY * elapsedTime;
-  // Fehler =???
-  gyroAngleZ = gyroAngleZ + GyroZ * elapsedTime;
-  // Complementary filter - combine acceleromter and gyro angle values
-  roll = 0.96 * gyroAngleX + 0.04 * accAngleX;
-  pitch = 0.96 * gyroAngleY + 0.04 * accAngleY;
-
-
-  if (getState(3)) {
-
-    Serial.println("Recording");
-    std::string dataToAppend = std::to_string(accel.acceleration.x) + "," + std::to_string(accel.acceleration.y) + "," + std::to_string(accel.acceleration.z) + "," + std::to_string(gyro.gyro.x) + "," + std::to_string(gyro.gyro.y) + "," + std::to_string(gyro.gyro.z) + "," + std::to_string(bmp.temperature) + "," + std::to_string(bmp.pressure) + "," + std::to_string(bmp.readAltitude(seapressure)) + "\n";
-    appendFile(SD, fileName.c_str(), dataToAppend.c_str());
-
-  }
-  if(getState(2)) {
-    Serial.println(topAltitude);
-   if (bmp.readAltitude(seapressure) > topAltitude) {
-     topAltitude = bmp.readAltitude(seapressure);
-      Serial.println("Height Increase");
-    }
-    if ((topAltitude - bmp.readAltitude(seapressure)) >= deploymentAltitudeDrop && !getState(1)) {
-      servoP.write(0); // Deploy parachute
-      setState(1, true); // update parachute var
-      setState(0, false); // update launched var, reenables wifi
-      Serial.println("Parachute deployed due to altitude drop below threshold.");
-    }
-    if (bmp.readAltitude(seapressure) > (startAltitude + WifiCutoff) && !getState(0)) {
-      setState(0, true);
-    }
-}
+  if(!getState(0)) {
+    WiFiClient client = server.available();
   
-  delay(500);
-  Serial.println("logged");
-}
-
-
-void setState(int var, bool state) {
-  if (state) {
-    stateHolder |= 1 << var; // Set bit var to 1
-  } else {
-    stateHolder &= ~(1 << var); // Set bit var to 0
-  }
-}
-
-// Function to get the state of the bit (bit 0)
-bool getState(int var) {
-  return (stateHolder & (1 << var)) != 0;
-}
-void toggle(int var) {
-  if (getState(var)) {
-    setState(var, false);
-  }
-  else {
-    setState(var, true);
-  }
-}
-
-void writeFile(fs::FS &fs, const char * path, const char * message) {
-  Serial.printf("Writing file: %s\n", path);
-
-  File file = fs.open(path, FILE_WRITE);
-  if (!file) {
-    Serial.println("Failed to open file for writing");
-    return;
-  }
-  if (file.print(message)) {
-    Serial.println("File written");
-  } else {
-    Serial.println("Write failed");
-  }
-  file.close();
-}
-
-void appendFile(fs::FS &fs, const char * path, const char * message) {
-  //Serial.printf("Appending to file: %s\n", path);
-
-  File file = fs.open(path, FILE_APPEND);
-  if (!file) {
-    //Serial.println("Failed to open file for appending");
-    return;
-  }
-  if (file.print(message)) {
-    //Serial.println("Message appended");
-  } else {
-   // Serial.println("Append failed");
-  }
-  file.close();
-}
-
-void calculate_IMU_error() {
-  sensors_event_t accel;
-  sensors_event_t gyro;
-  sensors_event_t mag;
-  sensors_event_t temp;
-  icm.getEvent(&accel, &gyro, &temp, &mag);
-
-  // We can call this funtion in the setup section to calculate the accelerometer and gyro data error. From here we will get the error values used in the above equations printed on the Serial Monitor.
-  // Note that we should place the IMU flat in order to get the proper values, so that we then can the correct values
-  // Read accelerometer values 200 times
-  while (errorCount < 200) {
-
+    if (client) {
+      String currentLine = "";
+      while (client.connected()) {
+        if (client.available()) {
+          char c = client.read();
+          if (c == '\n') {
+            if (currentLine.length() == 0) {
+              client.println("HTTP/1.1 200 OK");
+              client.println("Content-type:text/html");
+              client.println();
+  
+              if (!getState(3)) {
+              client.print("<a href=\"/START_RECORDING\">START RECORDING</a><br>");
+              }
+              if (getState(3)) {
+                client.print("<a href=\"/END_RECORDING\">END RECORDING</a><br>");
+              }
+              if (getState(2)) {
+                client.print("<a href=\"/DEACTIVATE\">FLIGHT READY </a><br>");
+              }
+              if (!getState(2)) {
+                client.print("<a href=\"/ACTIVATE\">SYSTEMS OFFLINE</a><br>");
+              }
+              if (!getState(1)) {
+                client.print("<a href=\"/P_DEPLOY\">DEPLOY PARACHUTE</a><br>");
+              }
+              if (getState(1)) {
+                client.print("<a href=\"/P_LOCK\">LOCK PARACHUTE</a><br>");
+              }
+  
+              break;
+            } else {
+              currentLine = "";
+            }
+          } else if (c != '\r') {
+            currentLine += c;
+          }
+  
+  
+  
+          if (currentLine.endsWith("GET /START_RECORDING")) {
+            Serial.print("START RECORDING");
+            toggle(3);
+            fileNum += 1;
+            fileName = "/Recording" + std::to_string(fileNum) + ".txt";
+            writeFile(SD, fileName.c_str(), "*C, Pres, Alt\n");
+          } else if (currentLine.endsWith("GET /END_RECORDING")) {
+            Serial.print("END RECORDING");
+            toggle(3);
+          } else if (currentLine.endsWith("GET /ACTIVATE")) {
+            toggle(2);
+            setState(1, false);
+            servoP.write(180);
+            startAltitude = bmp.readAltitude(seapressure);
+          } else if (currentLine.endsWith("GET /DEACTIVATE")) {
+            toggle(2);
+          } else if (currentLine.endsWith("GET /P_LOCK")) {
+            toggle(1);
+            servoP.write(180);
+          } else if (currentLine.endsWith("GET /P_DEPLOY")) {
+            toggle(1);
+            servoP.write(0);
+          } 
+          
+          
+  
+        }
+      }
+      client.stop();
+    }
+    }
+      // Get a new normalized sensor event
+    sensors_event_t accel;
+    sensors_event_t gyro;
+    sensors_event_t mag;
+    sensors_event_t temp;
+    icm.getEvent(&accel, &gyro, &temp, &mag);
+    calculate_IMU_error();
     AccX = accel.acceleration.x;
     AccY = accel.acceleration.y;
     AccZ = accel.acceleration.z;
-
-    // Sum all readings
-    AccErrorX = AccErrorX + ((atan((AccY) / sqrt(pow((AccX), 2) + pow((AccZ), 2))) * 180 / PI));
-    AccErrorY = AccErrorY + ((atan(-1 * (AccX) / sqrt(pow((AccY), 2) + pow((AccZ), 2))) * 180 / PI));
-    errorCount++;
+  
+      // Sum all readings
+    accAngleX = (atan(AccY / sqrt(pow(AccX, 2) + pow(AccZ, 2))) * 180 / PI) - 0.58;
+    accAngleY = (atan(-1 * AccX / sqrt(pow(AccY, 2) + pow(AccZ, 2))) * 180 / PI) + 1.58;
+  
+    // === Read gyroscope data === //
+    previousTime = currentTime; // Previous time is stored before the actual time read
+    currentTime = millis(); // Current time actual time read
+    elapsedTime = (currentTime - previousTime) / 1000; // Divide by 1000 to get seconds
+  
+    // correct the gyro.gyro.x, y and z values
+    // take Gyro Error from IMU Error
+    GyroX = (gyro.gyro.x + 0.56); // GyroError x
+    GyroY = (gyro.gyro.y - 2 ); // GyroError y
+    GyroZ = (gyro.gyro.z + 0.79); // GyroError z
+  
+    // Currently the raw values are in degrees per seconds, deg/s, so we need to multiply by sendonds (s) to get the angle in degrees
+    gyroAngleX = gyroAngleX + GyroX * elapsedTime; // deg/s * s = deg
+    gyroAngleY = gyroAngleY + GyroY * elapsedTime;
+    // Fehler =???
+    gyroAngleZ = gyroAngleZ + GyroZ * elapsedTime;
+    // Complementary filter - combine acceleromter and gyro angle values
+    roll = 0.96 * gyroAngleX + 0.04 * accAngleX;
+    pitch = 0.96 * gyroAngleY + 0.04 * accAngleY;
+  
+  
+    if (getState(3)) {
+  
+      Serial.println("Recording");
+      std::string dataToAppend = std::to_string(accel.acceleration.x) + "," + std::to_string(accel.acceleration.y) + "," + std::to_string(accel.acceleration.z) + "," + std::to_string(gyro.gyro.x) + "," + std::to_string(gyro.gyro.y) + "," + std::to_string(gyro.gyro.z) + "," + std::to_string(bmp.temperature) + "," + std::to_string(bmp.pressure) + "," + std::to_string(bmp.readAltitude(seapressure)) + "\n";
+      appendFile(SD, fileName.c_str(), dataToAppend.c_str());
+  
+    }
+    if(getState(2)) {
+      Serial.println(topAltitude);
+     if (bmp.readAltitude(seapressure) > topAltitude) {
+       topAltitude = bmp.readAltitude(seapressure);
+        Serial.println("Height Increase");
+      }
+      if ((topAltitude - bmp.readAltitude(seapressure)) >= deploymentAltitudeDrop && !getState(1)) {
+        servoP.write(0); // Deploy parachute
+        setState(1, true); // update parachute var
+        setState(0, false); // update launched var, reenables wifi
+        Serial.println("Parachute deployed due to altitude drop below threshold.");
+      }
+      if (bmp.readAltitude(seapressure) > (startAltitude + WifiCutoff) && !getState(0)) {
+        setState(0, true);
+      }
   }
-  //Divide the sum by 200 to get the error value
-  AccErrorX = AccErrorX / 200;
-  AccErrorY = AccErrorY / 200;
-  errorCount = 0;
-  // Read gyro values 200 times
-  while (errorCount < 200) {
-
-    GyroX = gyro.gyro.x;
-    GyroY = gyro.gyro.y;
-    GyroZ = gyro.gyro.z;
-
-    // Sum all readings
-    GyroErrorX = GyroErrorX + (GyroX / 131.0);
-    GyroErrorY = GyroErrorY + (GyroY / 131.0);
-    GyroErrorZ = GyroErrorZ + (GyroZ / 131.0);
-    errorCount++;
+    
+    delay(500);
+    Serial.println("logged");
   }
-  //Divide the sum by 200 to get the error value
-  GyroErrorX = GyroErrorX / 200;
-  GyroErrorY = GyroErrorY / 200;
-  GyroErrorZ = GyroErrorZ / 200;
-  // Print the error values on the Serial Monitor
-  // Serial.print("AccErrorX: ");
-  // Serial.println(AccErrorX);
-  // Serial.print("AccErrorY: ");
-  // Serial.println(AccErrorY);
-  // Serial.print("GyroErrorX: ");
-  // Serial.println(GyroErrorX);
-  // Serial.print("GyroErrorY: ");
-  // Serial.println(GyroErrorY);
-  // Serial.print("GyroErrorZ: ");
-  // Serial.println(GyroErrorZ);
+  
+  
+  void setState(int var, bool state) {
+    if (state) {
+      stateHolder |= 1 << var; // Set bit var to 1
+    } else {
+      stateHolder &= ~(1 << var); // Set bit var to 0
+    }
+  }
+  
+  // Function to get the state of the bit (bit 0)
+  bool getState(int var) {
+    return (stateHolder & (1 << var)) != 0;
+  }
+  void toggle(int var) {
+    if (getState(var)) {
+      setState(var, false);
+    }
+    else {
+      setState(var, true);
+    }
+  }
+  
+  void writeFile(fs::FS &fs, const char * path, const char * message) {
+    Serial.printf("Writing file: %s\n", path);
+  
+    File file = fs.open(path, FILE_WRITE);
+    if (!file) {
+      Serial.println("Failed to open file for writing");
+      return;
+    }
+    if (file.print(message)) {
+      Serial.println("File written");
+    } else {
+      Serial.println("Write failed");
+    }
+    file.close();
+  }
+  
+  void appendFile(fs::FS &fs, const char * path, const char * message) {
+    //Serial.printf("Appending to file: %s\n", path);
+  
+    File file = fs.open(path, FILE_APPEND);
+    if (!file) {
+      //Serial.println("Failed to open file for appending");
+      return;
+    }
+    if (file.print(message)) {
+      //Serial.println("Message appended");
+    } else {
+     // Serial.println("Append failed");
+    }
+    file.close();
+  }
+  
+  void calculate_IMU_error() {
+    sensors_event_t accel;
+    sensors_event_t gyro;
+    sensors_event_t mag;
+    sensors_event_t temp;
+    icm.getEvent(&accel, &gyro, &temp, &mag);
+  
+    // We can call this funtion in the setup section to calculate the accelerometer and gyro data error. From here we will get the error values used in the above equations printed on the Serial Monitor.
+    // Note that we should place the IMU flat in order to get the proper values, so that we then can the correct values
+    // Read accelerometer values 200 times
+    while (errorCount < 200) {
+  
+      AccX = accel.acceleration.x;
+      AccY = accel.acceleration.y;
+      AccZ = accel.acceleration.z;
+  
+      // Sum all readings
+      AccErrorX = AccErrorX + ((atan((AccY) / sqrt(pow((AccX), 2) + pow((AccZ), 2))) * 180 / PI));
+      AccErrorY = AccErrorY + ((atan(-1 * (AccX) / sqrt(pow((AccY), 2) + pow((AccZ), 2))) * 180 / PI));
+      errorCount++;
+    }
+    //Divide the sum by 200 to get the error value
+    AccErrorX = AccErrorX / 200;
+    AccErrorY = AccErrorY / 200;
+    errorCount = 0;
+    // Read gyro values 200 times
+    while (errorCount < 200) {
+  
+      GyroX = gyro.gyro.x;
+      GyroY = gyro.gyro.y;
+      GyroZ = gyro.gyro.z;
+  
+      // Sum all readings
+      GyroErrorX = GyroErrorX + (GyroX / 131.0);
+      GyroErrorY = GyroErrorY + (GyroY / 131.0);
+      GyroErrorZ = GyroErrorZ + (GyroZ / 131.0);
+      errorCount++;
+    }
+    //Divide the sum by 200 to get the error value
+    GyroErrorX = GyroErrorX / 200;
+    GyroErrorY = GyroErrorY / 200;
+    GyroErrorZ = GyroErrorZ / 200;
+    // Print the error values on the Serial Monitor
+    // Serial.print("AccErrorX: ");
+    // Serial.println(AccErrorX);
+    // Serial.print("AccErrorY: ");
+    // Serial.println(AccErrorY);
+    // Serial.print("GyroErrorX: ");
+    // Serial.println(GyroErrorX);
+    // Serial.print("GyroErrorY: ");
+    // Serial.println(GyroErrorY);
+    // Serial.print("GyroErrorZ: ");
+    // Serial.println(GyroErrorZ);
 }
