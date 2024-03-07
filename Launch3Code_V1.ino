@@ -340,7 +340,9 @@ void loop() {
     if (getState(3)) {
   
       Serial.println("Recording");
-      std::string dataToAppend = std::to_string(accel.acceleration.x) + "," + std::to_string(accel.acceleration.y) + "," + std::to_string(accel.acceleration.z) + "," + std::to_string(gyro.gyro.x) + "," + std::to_string(gyro.gyro.y) + "," + std::to_string(gyro.gyro.z) + "," + std::to_string(bmp.temperature) + "," + std::to_string(bmp.pressure) + "," + std::to_string(bmp.readAltitude(seapressure)) + "\n";
+      std::string dataToAppend = std::to_string(accel.acceleration.x) + "," + std::to_string(accel.acceleration.y) + "," + std::to_string(accel.acceleration.z) + "," + 
+        std::to_string(gyro.gyro.x) + "," + std::to_string(gyro.gyro.y) + "," + std::to_string(gyro.gyro.z) + "," + 
+        std::to_string(bmp.temperature) + "," + std::to_string(bmp.pressure) + "," + std::to_string(bmp.readAltitude(seapressure)) + "\n";
       appendFile(SD, fileName.c_str(), dataToAppend.c_str());
   
     }
