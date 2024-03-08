@@ -18,9 +18,10 @@ using namespace std;
 #include <Wire.h>
 
 #include <ESP32Servo.h>
-#define ParachuteServo 17 //ADD NUMBER
+const int ParachuteServo = 17; //ADD NUMBER
 Servo servoP;
-
+const int AirbrakeServo = 16;
+Servo servoB;
 #include "FS.h"
 #include "SD.h"
 #include "SPI.h"
@@ -221,6 +222,7 @@ void setup() {
   // calculate_IMU_error();
   // return;
   ESP32PWM::allocateTimer(0);
+  ESP32PWM::allocateTimer(1);
   servoP.setPeriodHertz(50); 
   servoP.attach(ParachuteServo, 500, 2400); // or 500 2400
   servoP.write(180);
