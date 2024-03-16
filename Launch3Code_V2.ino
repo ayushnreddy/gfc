@@ -18,7 +18,7 @@ using namespace std;
 #include <Wire.h>
 
 #include <ESP32Servo.h>
-const int ParachuteServo = 17; //ADD NUMBER
+const int ParachuteServo = 9; //ADD NUMBER
 Servo servoP;
 #include "FS.h"
 #include "SD.h"
@@ -29,22 +29,20 @@ Adafruit_BMP3XX bmp;
 
 
 #define ICM_20948_USE_DMP
-// For SPI mode, we need a CS pin
-#define ICM_CS 26
-// For software-SPI mode we need SCK/MOSI/MISO pins
-#define ICM_SCK 33
-#define ICM_MISO 25
-#define ICM_MOSI 32
+#define ICM_SCK 8
+#define ICM_MISO 7
+#define ICM_MOSI 6
+#define ICM_CS 5
 
-#define SD_SCK  14
+#define SD_SCK  11
 #define SD_MISO  12
 #define SD_MOSI  13
-#define SD_CS  15
+#define SD_CS  14
 
-#define BMP_SCK 18
-#define BMP_MISO 19
-#define BMP_MOSI 23
-#define BMP_CS 5
+#define BMP_SCK 1
+#define BMP_MISO 2
+#define BMP_MOSI 3
+#define BMP_CS 4
 
 #define seapressure (1013.25)
 
