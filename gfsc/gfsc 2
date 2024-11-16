@@ -130,7 +130,7 @@ void loop() {
   appendFile(SD, "/test.txt", std::to_string(bmp.readAltitude(seapressure)).c_str());
   Serial.println(bmp.readAltitude(seapressure));
   appendFile(SD, "/test.txt", "\n");
-  if(bmp.readAltitude(seapressure)+1<topHeight){
+  if(bmp.readAltitude(seapressure)+3<topHeight){
     servoP.write(300);
     appendFile(SD, "/test.txt", "P \n");
     Serial.println("deployed");
