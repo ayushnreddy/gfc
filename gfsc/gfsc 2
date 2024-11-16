@@ -1,0 +1,142 @@
+#include <Adafruit_Sensor.h>
+#include "Adafruit_BMP3XX.h"
+#include <Wire.h>
+
+#include "FS.h"
+#include "SD.h"
+#include "SPI.h"
+#include <ESP32Servo.h>
+//#include <ESP32Servo.h>
+#define ParachuteServo 27 //ADD NUMBER
+
+Servo servoP;
+
+Adafruit_BMP3XX bmp;
+
+//sd
+#define SD_SCK  14
+#define SD_MISO  12
+#define SD_MOSI  13
+#define SD_CS  15
+
+//bmp
+#define BMP_SCK 18
+#define BMP_MISO 19
+#define BMP_MOSI 23
+#define BMP_CS 5
+
+#define seapressure (1013.25)
+
+float topHeight = 0;
+
+SPIClass spi = SPIClass(HSPI);
+
+void writeFile(fs::FS &fs, const char * path, const char * message) {
+  Serial.printf("Writing file: %s\n", path);
+
+  File file = fs.open(path, FILE_WRITE);
+  if (!file) {
+    Serial.println("Failed to open file for writing");
+    return;
+  }
+  if (file.print(message)) {
+    Serial.println("File written");
+  } else {
+    Serial.println("Write failed");
+  }
+  file.close();
+}
+
+void appendFile(fs::FS &fs, const char * path, const char * message) {
+  Serial.printf("Appending to file: %s\n", path);
+
+  File file = fs.open(path, FILE_APPEND);
+  if (!file) {
+    Serial.println("Failed to open file for appending");
+    return;
+  }
+  if (file.print(message)) {
+    Serial.println("Message appended");
+  } else {
+    Serial.println("Append failed");
+  }
+  file.close();
+}
+
+void setup() {
+
+
+  Serial.begin(115200);
+  spi.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
+  while (!Serial)
+  delay(10); // will pause Zero, Leonardo, etc until serial console opens
+
+  //initialize
+  if (! bmp.begin_SPI(BMP_CS, BMP_SCK, BMP_MISO, BMP_MOSI)) { //software spi
+    Serial.println("Could not find a valid BMP3 sensor, check wiring!");
+    while (1);
+  }
+  bmp.setTemperatureOversampling(BMP3_OVERSAMPLING_8X);
+  bmp.setPressureOversampling(BMP3_OVERSAMPLING_4X);
+  bmp.setIIRFilterCoeff(BMP3_IIR_FILTER_COEFF_3);
+  bmp.setOutputDataRate(BMP3_ODR_50_HZ);
+  if (!SD.begin(SD_CS,spi,80000000)) {
+    Serial.println("Card Mount Failed");
+    return;
+  }
+
+  uint8_t cardType = SD.cardType();
+
+  if(cardType == CARD_NONE){
+    Serial.println("No SD card attached");
+    return;
+  }
+
+  Serial.print("SD Card Type: ");
+  if(cardType == CARD_MMC){
+    Serial.println("MMC");
+  } else if(cardType == CARD_SD){
+    Serial.println("SDSC");
+  } else if(cardType == CARD_SDHC){
+    Serial.println("SDHC");
+  } else {
+    Serial.println("UNKNOWN");
+  }
+
+  uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+  Serial.printf("SD Card Size: %lluMB\n", cardSize);
+
+
+
+
+  Serial.println();
+  writeFile(SD, "/test.txt", "test\n");
+
+  ESP32PWM::allocateTimer(0);
+  servoP.setPeriodHertz(50); 
+  servoP.attach(ParachuteServo);
+  servoP.attach(ParachuteServo, 500, 2400);
+  for(int i = 0; i<=1; i++){
+    Serial.println(bmp.readAltitude(seapressure));
+    bmp.readAltitude(seapressure);
+  }
+
+}
+
+//////////////////////////// loop ////////////////////////
+
+void loop() {
+
+  appendFile(SD, "/test.txt", std::to_string(bmp.readAltitude(seapressure)).c_str());
+  Serial.println(bmp.readAltitude(seapressure));
+  appendFile(SD, "/test.txt", "\n");
+  if(bmp.readAltitude(seapressure)+1<topHeight){
+    servoP.write(300);
+    appendFile(SD, "/test.txt", "P \n");
+    Serial.println("deployed");
+  }else if(bmp.readAltitude(seapressure)>topHeight){
+    topHeight = bmp.readAltitude(seapressure);
+  }
+  
+  delay(50);
+}
