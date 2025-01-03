@@ -119,7 +119,7 @@ void loop() {
   Serial.println(currentHeight);
   
   Serial.println();
-  if(currentHeight+5<topHeight && launched){
+  if(currentHeight+3<topHeight && launched){
     servoP.write(300);
     Serial.println("deployed");
     
