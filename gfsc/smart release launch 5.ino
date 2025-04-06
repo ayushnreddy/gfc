@@ -1,20 +1,3 @@
-/***************************************************************************
-  This is a library for the BMP3XX temperature & pressure sensor
-
-  Designed specifically to work with the Adafruit BMP388 Breakout
-  ----> http://www.adafruit.com/products/3966
-
-  These sensors use I2C or SPI to communicate, 2 or 4 pins are required
-  to interface.
-
-  Adafruit invests time and resources providing this open source code,
-  please support Adafruit and open-source hardware by purchasing products
-  from Adafruit!
-
-  Written by Limor Fried & Kevin Townsend for Adafruit Industries.
-  BSD license, all text above must be included in any redistribution
- ***************************************************************************/
-
 #include <Adafruit_Sensor.h>
 #include <Adafruit_MPU6050.h>
 #include "Adafruit_BMP3XX.h"
@@ -41,7 +24,6 @@ bool launched = false;
 unsigned long currentTime;
 unsigned long launchTime = 0;
 float startHeight=0;
-int deployed = 0;
 
 Servo ParachuteServo;
 Servo AirbrakeServo;
@@ -99,26 +81,19 @@ void loop() {
   Serial.println(currentHeight);
   Serial.println(topHeight);
 
-  if(currentHeight<=(currentTime*-5)+1218 && deployed == 0 && launched && currentHeight<topHeight-3){
+  if(currentHeight<=(currentTime*-5/1000)+1218 && deployed == 0 && launched && currentHeight<topHeight-3){
     ParachuteServo.write(270);
     AirbrakeServo.write(100);
-    deployed = 2;
     
   }
   if(currentHeight+20<topHeight && deployed == 0){
     ParachuteServo.write(270);
     AirbrakeServo.write(100);
 
-    deployed = 1;
-
   }else if(currentHeight>topHeight){
     topHeight = currentHeight;
   }
-  if(deployed == 2){
-    Serial.println("smart release");
-  }else if (deployed == 1){
-    Serial.println("backup release");
-  }
+
   sensors_event_t a, g, t;
   mpu.getEvent(&a, &g, &t);
   
