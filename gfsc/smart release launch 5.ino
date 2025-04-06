@@ -81,7 +81,8 @@ void loop() {
   Serial.println(currentHeight);
   Serial.println(topHeight);
 
-  if(currentHeight<=(currentTime*-5/1000)+1218 && deployed == 0 && launched && currentHeight<topHeight-3){
+  if(currentHeight<=(currentTime*-5/1000)+1218 && 
+    deployed == 0 && launched && currentHeight<topHeight-3){
     ParachuteServo.write(270);
     AirbrakeServo.write(100);
     
